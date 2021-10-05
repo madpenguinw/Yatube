@@ -190,11 +190,6 @@ class PostPagesTests(TestCase):
             author=self.author)
         response = self.authorized_client.get(reverse('posts:follow_index'))
         self.assertEqual(len(response.context['page_obj']), 1)
-        not_a_follower = User.objects.create_user(username='Capitan_Nemo')
-        authorized_client = Client()
-        authorized_client.force_login(not_a_follower)
-        response = authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(len(response.context['page_obj']), 0)
 
     def test_followers_can_not_see_new_post_of_following_author(self):
         """Новая запись пользователя не появляется в ленте тех,
