@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Пост {{ post_detail.text|truncatechars:30 }}
+{% endblock title %}
+{% block content %}
+  <div class='row'>
+    <aside class='col-12 col-md-3'>
+      <ul class='list-group list-group-flush'>
+        <li class='list-group-item'>
+          Дата публикации: {{ post_detail.pub_date|date:'d E Y'}}
+        </li>
+        {% load thumbnail %}
+        {% thumbnail post_detail.image "960x339" crop="center" upscale=True as im %}
+          <img class="card-img my-2" src="{{ im.url }}">
+        {% endthumbnail %} 
+        {% if post_detail.group %}
+          <li class='list-group-item'>
+            Группа: <a href="{% url 'posts:group_posts' post_detail.group.slug %}">
+              {{ post_detail.group }} </a>
+          </li>
+          {% endif %} 
+          <li class='list-group-item'>
+            Автор: <a href="{% url 'posts:profile' post_detail.author %}">
+             {{ post_detail.author.get_full_name }} </a>
+          </li>
+          <li class='list-group-item d-flex justify-content-between align-items-center'>
+          Всего постов автора:  <span >{{ post_detail.author.posts.count }}</span>
+        </li>
+      </ul>
+    </aside>
+    {% load thumbnail %}
+    <article class='col-12 col-md-9'>
+    {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+      <img class="card-img my-2" src="{{ im.url }}">
+    {% endthumbnail %}
+      <p>
+        {{ post_detail.text}}    
+      </p>
+    </article>
+  </div>
+  {% include 'includes/comments.html' %}
+  {% if request.user == post_detail.author%}
+    <div class="d-flex justify-content-end">
+      <a href="{% url 'posts:post_edit' post_detail.id %}">
+        <button type="submit" class="btn btn-primary">
+          Редактировать запись
+        </button> 
+   </div>
+  {% endif %}
+{% endblock content %}

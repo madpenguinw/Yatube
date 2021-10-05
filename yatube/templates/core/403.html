@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}403 Forbidden{% endblock %}
+{% block content %}
+  <h1>При переходе на страницу возникла возникла проблема с авторизацией</h1>
+    <a href="{% url 'posts:index' %}"> Идите на главную</a>
+{% endblock %}
