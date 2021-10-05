@@ -163,25 +163,23 @@ class PostPagesTests(TestCase):
     def test_authorized_user_can_follow_author(self):
         """Авторизованный пользователь может подписываться
         на других пользователей."""
+        count_follow = Follow.objects.count()
         self.authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': self.author.username}
         ))
-        self.assertTrue(Follow.objects.filter(
-            user=self.user, author=self.author).exists())
+        self.assertEqual(Follow.objects.count(), count_follow + 1)
 
     def test_authorized_user_can_unfollow_author(self):
         """Авторизованный пользователь может  удалять других
         пользователей из подписок."""
         Follow.objects.create(user=self.user, author=self.author)
-        self.assertTrue(Follow.objects.filter(
-            user=self.user, author=self.author).exists())
+        count_follow = Follow.objects.count()
         self.authorized_client.get(reverse(
             'posts:profile_unfollow',
             kwargs={'username': self.author.username}
         ))
-        self.assertFalse(Follow.objects.filter(
-            user=self.user, author=self.author).exists())
+        self.assertEqual(Follow.objects.count(), count_follow - 1)
 
     def test_followers_can_see_new_post_of_following_author(self):
         """Новая запись пользователя появляется в ленте тех,
