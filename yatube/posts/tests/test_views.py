@@ -166,11 +166,9 @@ class PostPagesTests(TestCase):
         count_follow = Follow.objects.count()
         self.authorized_client.get(reverse(
             'posts:profile_follow',
-            kwargs={'username': self.user.username}
+            kwargs={'username': self.author.username}
         ))
         self.assertEqual(Follow.objects.count(), count_follow + 1)
-        self.assertFalse(Follow.objects.filter(
-            user=self.author, author=self.author).exists())
 
     def test_authorized_user_can_unfollow_author(self):
         """Авторизованный пользователь может  удалять других
