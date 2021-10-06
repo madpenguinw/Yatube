@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from posts.models import Post, Group
-from posts.forms import PostForm
+from posts.models import Comment
 
 User = get_user_model()
 
@@ -31,7 +31,6 @@ class PostCreateFormTests(TestCase):
             text='Какой-нибудь текст',
             author=cls.user,
         )
-        cls.form = PostForm()
 
     @classmethod
     def tearDownClass(cls):
@@ -56,7 +55,6 @@ class PostCreateFormTests(TestCase):
             content_type='image/gif'
         )
         form_data = {
-            'title': 'Тестовый заголовок',
             'text': 'Какой-нибудь текст',
             'image': uploaded,
         }
@@ -70,12 +68,6 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(last_object.text, form_data['text'])
         self.assertEqual(last_object.author, self.user)
-        self.assertTrue(
-            Post.objects.filter(
-                text='Какой-нибудь текст',
-                image='posts/small.gif'
-            ).exists()
-        )
 
     def test_edit_post(self):
         """Проверка редактирвоания записи в БД
@@ -86,7 +78,7 @@ class PostCreateFormTests(TestCase):
         )
         posts_count = Post.objects.count()
         form_data = {
-            'text': 'Какой-нибудь текст',
+            'text': 'Другой текст',
         }
         response = PostCreateFormTests.authorized_client.post(
             reverse(
@@ -96,7 +88,7 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertEqual(Post.objects.last().text, form_data['text'])
+        self.assertNotEqual(Post.objects.last().text, form_data['text'])
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertEqual(response.status_code, 200)
 
@@ -109,7 +101,7 @@ class PostCreateFormTests(TestCase):
         form_data = {
             'text': 'Какой-нибудь текст',
         }
-        no_comment = post.comments.count()
+        zero_comments = Comment.objects.count()
         PostCreateFormTests.authorized_client.post(
             reverse(
                 'posts:add_comment',
@@ -117,8 +109,8 @@ class PostCreateFormTests(TestCase):
             ),
             data=form_data,
         )
-        comment = post.comments.get(author=self.user)
-        created_comment = post.comments.count()
-        self.assertEqual(comment.text, form_data['text'])
-        self.assertEqual(no_comment, 0)
-        self.assertEqual(created_comment, 1)
+        one_comment = post.comments.count()
+        last_object = Comment.objects.last()
+        self.assertEqual(last_object.text, form_data['text'])
+        self.assertEqual(last_object.author, self.user)
+        self.assertEqual(one_comment, zero_comments + 1)
