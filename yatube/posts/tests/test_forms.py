@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from posts.models import Post, Group
+from posts.models import Post
 from posts.models import Comment
 
 User = get_user_model()
@@ -24,13 +24,6 @@ class PostCreateFormTests(TestCase):
         cls.user = User.objects.create_user(username='Mikhail')
         cls.authorized_client = Client()
         cls.authorized_client.force_login(cls.user)
-        cls.group = Group.objects.create(
-            title='Какой-нибудь заголовок',
-        ),
-        Post.objects.create(
-            text='Какой-нибудь текст',
-            author=cls.user,
-        )
 
     @classmethod
     def tearDownClass(cls):
@@ -68,6 +61,7 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(last_object.text, form_data['text'])
         self.assertEqual(last_object.author, self.user)
+        self.assertEqual(last_object.image.name, 'posts/small.gif')
 
     def test_edit_post(self):
         """Проверка редактирвоания записи в БД
@@ -88,7 +82,7 @@ class PostCreateFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        self.assertNotEqual(Post.objects.last().text, form_data['text'])
+        self.assertEqual(Post.objects.last().text, form_data['text'])
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertEqual(response.status_code, 200)
 
@@ -109,8 +103,10 @@ class PostCreateFormTests(TestCase):
             ),
             data=form_data,
         )
-        one_comment = post.comments.count()
+        one_comment = Comment.objects.count()
         last_object = Comment.objects.last()
         self.assertEqual(last_object.text, form_data['text'])
         self.assertEqual(last_object.author, self.user)
         self.assertEqual(one_comment, zero_comments + 1)
+        check_post = post.comments.get(author=self.user)
+        self.assertEqual(check_post.text, form_data['text'])
