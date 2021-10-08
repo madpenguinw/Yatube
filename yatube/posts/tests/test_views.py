@@ -163,13 +163,15 @@ class PostPagesTests(TestCase):
     def test_authorized_user_can_follow_author(self):
         """Авторизованный пользователь может подписываться
         на других пользователей."""
-        Follow.objects.create(user=self.user, author=self.author)
+        follows_count = Follow.objects.count()
         self.authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': self.author.username}
         ))
-        self.assertTrue(Follow.objects.filter(
-            user=self.user, author=self.author).exists())
+        last_object = Follow.objects.last()
+        self.assertEqual(last_object.user, self.user)
+        self.assertEqual(last_object.author, self.author)
+        self.assertEqual(Follow.objects.count(), follows_count + 1)
 
     def test_authorized_user_can_unfollow_author(self):
         """Авторизованный пользователь может  удалять других
@@ -180,22 +182,20 @@ class PostPagesTests(TestCase):
             'posts:profile_unfollow',
             kwargs={'username': self.author.username}
         ))
-        self.assertFalse(Follow.objects.filter(
-            user=self.user, author=self.author).exists())
         self.assertEqual(Follow.objects.count(), count_follows - 1)
 
     def test_followers_can_see_new_post_of_following_author(self):
         """Новая запись пользователя появляется в ленте тех,
         кто на него подписан."""
-        Follow.objects.create(user=self.user, author=self.author)
-        Post.objects.create(
-            text='Какой-нибудь текст',
-            author=self.author)
-        response = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(
-            response.context['page_obj'].object_list[0].text,
-            self.post.text
-        )
+        follow_client = User.objects.create_user(username='Author_of_the_post')
+        authorized_client_1 = Client()
+        authorized_client_1.force_login(follow_client)
+        authorized_client_1.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.user.username}))
+        follow_1_index = authorized_client_1.get(reverse('posts:follow_index'))
+        follow_1_post = follow_1_index.context['page_obj'][0]
+        self.check_post_method(follow_1_post)
 
     def test_followers_can_not_see_new_post_of_following_author(self):
         """Новая запись пользователя не появляется в ленте тех,
